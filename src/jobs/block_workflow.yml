@@ -7,7 +7,11 @@ parameters:
     type: boolean
     # this is true at JOB level as intention is to block workflow
     default: true
-    description: "If true, this job will block until no other workflows with an earlier timestamp are running. Typically used as first job."
+    description: "If true, this job will block until no other workflows with an earlier timestamp are running. Typically used as first job. (useless if `block-workflow-by-name` is set to true)"
+  block-workflow-by-name:
+    type: boolean
+    default: false
+    description: "If true, this job will block until no other workflow with the same name and with an earlier timestamp are running. Typically used as first job."
   time:
     type: string
     default: "10"
