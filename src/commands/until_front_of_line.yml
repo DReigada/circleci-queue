@@ -8,6 +8,10 @@ parameters:
     # this is false at COMMAND level as intention is to only block CURRENT job.
     default: false
     description: "If true, this job will block until no other workflows with an earlier timestamp are running. Typically used as first job."
+  block-workflow-by-name:
+    type: boolean
+    default: false
+    description: "If true, this job will block until no other workflow with the same name and with an earlier timestamp are running. Typically used as first job."
   time:
     type: string
     default: "10"
@@ -146,7 +150,15 @@ steps:
           fi
 
           # falsey parameters are empty strings, so always compare against 'true' 
-          if [ "<<parameters.block-workflow>>" = "true" ] ;then
+          if [ "<<parameters.block-workflow-by-name>>" = "true" ] ;then
+            echo "Orb parameter block-workflow-by-name is true."
+            echo "This job will block until no previous workflows with the same name have *any* jobs running."
+
+            workflow_name=`jq ".[] | select(.workflows.workflow_id == \"${CIRCLE_WORKFLOW_JOB_ID}\"") | .workflows.workflow_name" /tmp/augmented_jobstatus.json`
+
+            oldest_running_build_num=`jq ". | map(select(.workflows.workflow_name == \"${workflow_name}\"))) | sort_by(.workflows.created_at)|  .[0].build_num" /tmp/augmented_jobstatus.json`
+            oldest_commit_time=`jq ". | map(select(.workflows.workflow_name == \"${workflow_name}\"))) | sort_by(.workflows.created_at)|  .[0].workflows.created_at" /tmp/augmented_jobstatus.json`
+          elif [ "<<parameters.block-workflow>>" = "true" ] ;then
             echo "Orb parameter block-workflow is true."
             echo "This job will block until no previous workflows have *any* jobs running."
             oldest_running_build_num=`jq 'sort_by(.workflows.created_at)| .[0].build_num' /tmp/augmented_jobstatus.json`
